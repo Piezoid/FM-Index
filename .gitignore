@@ -1,0 +1,6 @@
+# Python build dir
+Cython_wrapper/build/
+# Cythonized file
+Cython_wrapper/FMIndex.cpp
+# Python extension module built in-place
+Cython_wrapper/FMIndex*.so
