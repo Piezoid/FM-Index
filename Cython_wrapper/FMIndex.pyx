@@ -10,7 +10,7 @@ cdef extern from "FMIndex.h":
     cdef cppclass FMIndex:
         FMIndex(string) except +
         int findn(string)
-        list[string] find_lines(string)
+        list[string] find_lines(string, char, size_t)
         void serialize_to_file(string)
         size_t size()
         @staticmethod
@@ -25,8 +25,8 @@ cdef class PyFMIndex:
         del self.thisptr
     def findn(self, pattern):
         return self.thisptr.findn(pattern)
-    def find_lines(self, pattern):
-        return self.thisptr.find_lines(pattern)
+    def find_lines(self, pattern, newline=ord('\n'), max_context=100):
+        return self.thisptr.find_lines(pattern, newline, max_context)
     def new_from_serialized_file(self, filename):
         del self.thisptr
         self.thisptr = FMIndex.new_from_serialized_file(filename)
