@@ -224,40 +224,46 @@ std::vector<std::string> FMIndex::find_lines(const std::string & pattern,
     std::vector<Match> matches;
     find(matches, pattern, max_context);
 
-    std::vector<std::string> l;
+    std::vector<std::string> out;
+    out.reserve(matches.size());
+
+    std::ostringstream ss;
     for(auto & match : matches)
     {
-        std::ostringstream context_before_ss;
+        ss.str(std::string());
         try
         {
             copy_n_until(match.second,
                          max_context,
-                         std::ostream_iterator<char>(context_before_ss),
+                         std::ostream_iterator<char>(ss),
                          [new_line_char](char c) -> bool
                          {
                              return c == new_line_char;
                          });
         }
         catch(std::overflow_error & e) { };
-        std::ostringstream context_after_ss;
+        std::string context = ss.str();
+        std::reverse(context.begin(), context.end());
+        context.reserve(context.size() + pattern.size() + max_context);
+        context.append(pattern);
+
+        ss.str(std::string());
         try
         {
             copy_n_until(match.first,
                          max_context,
-                         std::ostream_iterator<char>(context_after_ss),
+                         std::ostream_iterator<char>(ss),
                          [new_line_char](char c) -> bool
                          {
                              return c == new_line_char;
                          });
         }
         catch(std::overflow_error & e) { };
-        std::string context_before_s = context_before_ss.str();
-        l.emplace_back(std::string(context_before_s.rbegin(), context_before_s.rend()) +
-                       pattern +
-                       context_after_ss.str());
+        context.append(ss.str());
+        out.push_back(std::move(context));
     }
 
-    return l;
+    return out;
 }
 
 size_t FMIndex::size(void) const
