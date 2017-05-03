@@ -3,12 +3,15 @@
 # distutils: include_dirs = ../FM-Index ../openbwt-v1.5
 # distutils: sources = ../FM-Index/FMIndex.cpp ../FM-Index/WaveletTree.cpp ../FM-Index/BitVector.cpp ../openbwt-v1.5/BWT.c
 
+from libcpp cimport bool
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 
+
 cdef extern from "FMIndex.h":
+
     cdef cppclass FMIndex:
-        FMIndex(string) except +
+        FMIndex(string, bool) except +
         int findn(string)
         vector[string] find_lines(string, char, size_t)
         void serialize_to_file(string)
@@ -19,8 +22,8 @@ cdef extern from "FMIndex.h":
 
 cdef class PyFMIndex:
     cdef FMIndex * thisptr
-    def __cinit__(self, s):
-        self.thisptr = new FMIndex(s)
+    def __cinit__(self, s, bool build_reverse=True):
+        self.thisptr = new FMIndex(s, build_reverse)
     def __dealloc__(self):
         del self.thisptr
     def findn(self, pattern):

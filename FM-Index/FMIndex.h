@@ -74,7 +74,7 @@ private:
     void populate_C(void);
 
 public:
-    FMIndex(const std::string & s);
+    FMIndex(const std::string & s, bool build_reverse=true);
 
     FMIndex(std::istreambuf_iterator<char> serial_data);
 

@@ -16,8 +16,9 @@ FMIndex::const_iterator::const_iterator(const std::unique_ptr<WaveletTree> & BWT
       C(C),
       i(i)
 {
+    if(at_end()) return; // Empty iterator
     if(i > BWT_or_BWTr->size()) throw std::out_of_range("Attempt to create FMIndex::const_iterator with out-of-bounds index");
-    if(!at_end()) c = BWT_or_BWTr->select(BWT_idx_from_row_idx(i, end_idx));
+    c = BWT_or_BWTr->select(BWT_idx_from_row_idx(i, end_idx));
 }
 
 bool FMIndex::const_iterator::operator==(const FMIndex::const_iterator & it)
@@ -137,7 +138,7 @@ void FMIndex::populate_C(void)
         C[*c] = BWT_as_wt->cum_freq(*c);
 }
 
-FMIndex::FMIndex(const std::string & s)
+FMIndex::FMIndex(const std::string & s, bool build_reverse)
 {
     if(s.empty()) throw std::length_error("Cannot construct zero-length FMIndex");
 
@@ -147,10 +148,15 @@ FMIndex::FMIndex(const std::string & s)
     BWT_end_idx = BWT((const unsigned char *) s.c_str(), (unsigned char *) &s_BWT[0], (int) s.size()); // C-style casts for C-function BWT.
     BWT_as_wt = std::unique_ptr<WaveletTree>(new WaveletTree(s_BWT, false));
 
-    // Build BWTr_as_wt:
-    std::string s_rev(s.rbegin(), s.rend()); // Uugh, waste of time+space. Ideally should teach BWT to optionally sort right-left.
-    BWTr_end_idx = BWT((const unsigned char *) s_rev.c_str(), (unsigned char *) &s_BWT[0], (int) s.size()); // C-style casts for C-function BWT.
-    BWTr_as_wt = std::unique_ptr<WaveletTree>(new WaveletTree(s_BWT));
+    if(build_reverse) {
+        // Build BWTr_as_wt:
+        std::string s_rev(s.rbegin(), s.rend()); // Uugh, waste of time+space. Ideally should teach BWT to optionally sort right-left.
+        BWTr_end_idx = BWT((const unsigned char *) s_rev.c_str(), (unsigned char *) &s_BWT[0], (int) s.size()); // C-style casts for C-function BWT.
+        BWTr_as_wt = std::unique_ptr<WaveletTree>(new WaveletTree(s_BWT));
+    } else {
+        BWTr_as_wt.reset();
+        BWTr_end_idx=0;
+    }
 
     populate_C();
 }
@@ -173,28 +179,40 @@ size_t FMIndex::find(std::vector<Match> & matches,
     size_t lb, ub, lbr, ubr;
     std::tie(lb, ub) = backward_search(pattern.rbegin(), pattern.rend(), BWT_as_wt, BWT_end_idx);
     if(ub <= lb) return 0;
-    std::tie(lbr, ubr) = backward_search(pattern.begin(), pattern.end(), BWTr_as_wt, BWTr_end_idx);
-    assert(ub-lb == ubr-lbr);
 
-    // Slightly painful last step: find permutation that matches up indices into BWT_as_wt and BWTr_as_wt.
     size_t n_matches = ub - lb;
-    size_t * fr_perm = new size_t[n_matches];
-    const_iterator ** text_iters;
-    text_iters = new const_iterator*[n_matches];
-    for(size_t i = 0; i < n_matches; i++)
-    {
-        text_iters[i] = new const_iterator(BWTr_as_wt, BWTr_end_idx, C, lbr + i);
-        fr_perm[i] = i;
+    matches.reserve(n_matches);
+
+    if(BWTr_as_wt) {
+        // The reverse BWT is searched for the same patern, allowing to retreive the right context.
+        std::tie(lbr, ubr) = backward_search(pattern.begin(), pattern.end(), BWTr_as_wt, BWTr_end_idx);
+        assert(ub-lb == ubr-lbr);
+
+        // Slightly painful last step: find permutation that matches up indices into BWT_as_wt and BWTr_as_wt.
+        size_t * fr_perm = new size_t[n_matches];
+        const_iterator ** text_iters;
+        text_iters = new const_iterator*[n_matches];
+        for(size_t i = 0; i < n_matches; i++)
+        {
+            text_iters[i] = new const_iterator(BWTr_as_wt, BWTr_end_idx, C, lbr + i);
+            fr_perm[i] = i;
+        }
+        msd_sort(fr_perm, n_matches, text_iters, max_context);
+        for(size_t i = 0; i < n_matches; i++)
+        {
+            matches.emplace_back(const_iterator(BWTr_as_wt, BWTr_end_idx, C, lbr + fr_perm[i]),
+                                const_reverse_iterator(BWT_as_wt, BWT_end_idx, C, lb + i));
+            delete text_iters[i];
+        }
+        delete [] text_iters;
+        delete [] fr_perm;
+    } else {
+        for(size_t i = 0; i < n_matches; i++)
+        {
+            matches.emplace_back(const_iterator(BWTr_as_wt, BWTr_end_idx, C, 0), // Empty iterator
+                                const_reverse_iterator(BWT_as_wt, BWT_end_idx, C, lb + i));
+        }
     }
-    msd_sort(fr_perm, n_matches, text_iters, max_context);
-    for(size_t i = 0; i < n_matches; i++)
-    {
-        matches.emplace_back(const_iterator(BWTr_as_wt, BWTr_end_idx, C, lbr + fr_perm[i]),
-                             const_reverse_iterator(BWT_as_wt, BWT_end_idx, C, lb + i));
-        delete text_iters[i];
-    }
-    delete [] text_iters;
-    delete [] fr_perm;
 
     return n_matches;
 }
