@@ -1,4 +1,5 @@
 # distutils: language = c++
+# distutils: extra_compile_args = -std=c++11
 # distutils: include_dirs = ../FM-Index ../openbwt-v1.5
 # distutils: sources = ../FM-Index/FMIndex.cpp ../FM-Index/WaveletTree.cpp ../FM-Index/BitVector.cpp ../openbwt-v1.5/BWT.c
 
