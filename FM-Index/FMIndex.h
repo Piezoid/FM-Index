@@ -51,6 +51,8 @@ public:
 
     typedef const_iterator const_reverse_iterator; // What is type-safe way of doing this?
 
+    typedef std::pair<const_iterator, const_reverse_iterator> Match;
+
 private:
     std::unique_ptr<WaveletTree> BWT_as_wt, BWTr_as_wt;
     size_t BWT_end_idx, BWTr_end_idx;
@@ -78,7 +80,7 @@ public:
 
     size_t findn(const std::string & pattern) const;
 
-    size_t find(std::list<std::pair<const_iterator, const_reverse_iterator>> & matches,
+    size_t find(std::list<Match> & matches,
                 const std::string & pattern,
                 const size_t max_context = 100) const;
 
