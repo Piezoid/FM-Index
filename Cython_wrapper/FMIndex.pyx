@@ -12,10 +12,9 @@ cdef extern from "FMIndex.h":
         list[string] find_lines(string)
         void serialize_to_file(string)
         size_t size()
-    #cdef FMIndex * new_from_serialized_file "FMIndex::new_from_serialized_file"(string)
+        @staticmethod
+        FMIndex * new_from_serialized_file(string)
 
-cdef extern from "FMIndex.h" namespace "FMIndex": # static member function hack
-    FMIndex * new_from_serialized_file(string)
 
 cdef class PyFMIndex:
     cdef FMIndex * thisptr
@@ -29,7 +28,7 @@ cdef class PyFMIndex:
         return self.thisptr.find_lines(pattern)
     def new_from_serialized_file(self, filename):
         del self.thisptr
-        self.thisptr = new_from_serialized_file(filename)
+        self.thisptr = FMIndex.new_from_serialized_file(filename)
     def serialize_to_file(self, filename):
         self.thisptr.serialize_to_file(filename)
     def size(self):
