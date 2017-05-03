@@ -164,7 +164,7 @@ size_t FMIndex::findn(const std::string & pattern) const
     return ub <= lb ? 0 : ub - lb;
 }
 
-size_t FMIndex::find(std::list<Match> & matches,
+size_t FMIndex::find(std::vector<Match> & matches,
                      const std::string & pattern,
                      const size_t max_context) const
 {
@@ -199,14 +199,14 @@ size_t FMIndex::find(std::list<Match> & matches,
     return n_matches;
 }
 
-std::list<std::string> FMIndex::find_lines(const std::string & pattern,
+std::vector<std::string> FMIndex::find_lines(const std::string & pattern,
                                            const char new_line_char,
                                            const size_t max_context) const
 {
-    std::list<Match> matches;
+    std::vector<Match> matches;
     find(matches, pattern, max_context);
 
-    std::list<std::string> l;
+    std::vector<std::string> l;
     for(auto & match : matches)
     {
         std::ostringstream context_before_ss;

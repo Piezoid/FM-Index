@@ -80,13 +80,13 @@ public:
 
     size_t findn(const std::string & pattern) const;
 
-    size_t find(std::list<Match> & matches,
+    size_t find(std::vector<Match> & matches,
                 const std::string & pattern,
                 const size_t max_context = 100) const;
 
-    std::list<std::string> find_lines(const std::string & pattern,
-                                      const char new_line_char = '\n',
-                                      const size_t max_context = 100) const;
+    std::vector<std::string> find_lines(const std::string & pattern,
+                                        const char new_line_char = '\n',
+                                        const size_t max_context = 100) const;
 
     size_t size(void) const;
 
