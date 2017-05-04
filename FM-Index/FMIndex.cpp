@@ -266,6 +266,41 @@ std::vector<std::string> FMIndex::find_lines(const std::string & pattern,
     return out;
 }
 
+std::vector<std::string> FMIndex::find_line_prefixes(const std::string & pattern,
+                                           const char new_line_char,
+                                           const size_t max_context) const
+{
+    std::vector<Match> matches;
+    find(matches, pattern, max_context);
+
+    std::vector<std::string> prefixes;
+    prefixes.reserve(matches.size());
+
+    std::ostringstream ss;
+    for(auto & match : matches)
+    {
+        ss.str(std::string());
+        try
+        {
+            copy_n_until(match.second,
+                         max_context,
+                         std::ostream_iterator<char>(ss),
+                         [new_line_char](char c) -> bool
+                         {
+                             return c == new_line_char;
+                         });
+        }
+        catch(std::overflow_error & e) { };
+
+        // Construct and invert the string in the vector
+        prefixes.push_back(ss.str());
+        std::string& prefix = prefixes.back();
+        std::reverse(prefix.begin(), prefix.end());
+    }
+
+    return prefixes;
+}
+
 size_t FMIndex::size(void) const
 {
     //assert(BWT_as_wt->size() == BWTr_as_wt->size());

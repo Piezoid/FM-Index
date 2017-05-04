@@ -14,6 +14,7 @@ cdef extern from "FMIndex.h":
         FMIndex(string, bool) except +
         int findn(string)
         vector[string] find_lines(string, char, size_t)
+        vector[string] find_line_prefixes(string, char, size_t)
         void serialize_to_file(string)
         size_t size()
         @staticmethod
@@ -30,6 +31,8 @@ cdef class PyFMIndex:
         return self.thisptr.findn(pattern)
     def find_lines(self, pattern, newline=ord('\n'), max_context=100):
         return self.thisptr.find_lines(pattern, newline, max_context)
+    def find_line_prefixes(self, pattern, newline=ord('\n'), max_context=100):
+        return self.thisptr.find_line_prefixes(pattern, newline, max_context)
     def new_from_serialized_file(self, filename):
         del self.thisptr
         self.thisptr = FMIndex.new_from_serialized_file(filename)

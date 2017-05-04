@@ -88,6 +88,10 @@ public:
                                         const char new_line_char = '\n',
                                         const size_t max_context = 100) const;
 
+    std::vector<std::string> find_line_prefixes(const std::string & pattern,
+                                                const char new_line_char = '\n',
+                                                const size_t max_context = 100) const;
+
     size_t size(void) const;
 
     const_iterator begin(void) const;
